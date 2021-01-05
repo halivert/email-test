@@ -1,5 +1,9 @@
 <?php
 
+use App\Models\User;
+use App\Notifications\GenericNotification;
+use App\Notifications\GenericQueueNotification;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,5 +18,26 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+	return view('welcome');
+});
+
+Route::post('/', function (Request $request) {
+	$email = $request->input('email');
+
+	$queue = $request->boolean('should_queue');
+
+	$user = User::firstWhere('email', $email);
+
+	if (!$user) {
+		$user = User::create([
+			'email' => $email
+		]);
+	}
+
+	if ($queue)
+		$user->notify(new GenericQueueNotification());
+	else
+		$user->notify(new GenericNotification());
+
+	return view('welcome', compact('email'));
 });
